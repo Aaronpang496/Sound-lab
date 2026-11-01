@@ -33,7 +33,6 @@
     gap: 20px;
   }
 
-  /* --- PANEL STYLING --- */
   .panel {
     background: rgba(15, 15, 20, 0.85);
     border: 1px solid #333;
@@ -45,7 +44,6 @@
     overflow: hidden;
   }
 
-  /* Top highlight line */
   .panel::before {
     content: '';
     position: absolute;
@@ -66,7 +64,6 @@
     gap: 8px;
   }
 
-  /* Status Dot */
   .status-dot {
     width: 8px; height: 8px;
     border-radius: 50%;
@@ -78,7 +75,6 @@
   .status-dot.recording { background: #ef4444; box-shadow: 0 0 10px #ef4444; animation: pulse 1s infinite; }
   @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
-  /* --- CONTROLS --- */
   .control-group { margin-bottom: 20px; }
   
   label {
@@ -87,7 +83,6 @@
     font-family: 'JetBrains Mono', monospace;
   }
 
-  /* Custom Select */
   select {
     width: 100%;
     padding: 12px;
@@ -104,7 +99,6 @@
   }
   select:focus { border-color: #38bdf8; box-shadow: 0 0 10px rgba(56,189,248,0.2); }
 
-  /* Custom Slider */
   input[type="range"] {
     width: 100%;
     -webkit-appearance: none;
@@ -126,7 +120,6 @@
   }
   input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
 
-  /* Buttons */
   button {
     width: 100%;
     padding: 16px;
@@ -149,7 +142,6 @@
   #btn-mic:hover { background: #4f46e5; box-shadow: 0 0 20px rgba(99,102,241,0.4); }
   #btn-mic.active { background: #ef4444; }
 
-  /* --- CANVAS DISPLAYS --- */
   .screen {
     width: 100%;
     height: 180px;
@@ -158,12 +150,14 @@
     border: 1px solid #222;
     box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
     position: relative;
+    overflow: hidden;
   }
   
   .screen-label {
     position: absolute; top: 10px; left: 15px;
     font-family: 'JetBrains Mono', monospace;
     font-size: 10px; color: #444; letter-spacing: 1px;
+    z-index: 10;
   }
 
   @media (max-width: 768px) {
@@ -195,7 +189,7 @@
     </div>
 
     <div class="screen" style="margin-bottom: 20px;">
-      <div class="screen-label">PREVIEW</div>
+      <div class="screen-label">OSCILLATOR PREVIEW</div>
       <canvas id="preview-canvas"></canvas>
     </div>
 
@@ -210,7 +204,7 @@
     <h2><div class="status-dot" id="mic-dot"></div> Live Detector</h2>
     
     <div class="screen" style="margin-bottom: 20px;">
-      <div class="screen-label">OSCILLOSCOPE</div>
+      <div class="screen-label">MIC OSCILLOSCOPE</div>
       <canvas id="mic-canvas"></canvas>
     </div>
 
@@ -235,53 +229,73 @@
   const previewCanvas = document.getElementById('preview-canvas');
   const previewCtx = previewCanvas.getContext('2d');
 
-  // --- DRAW GENERATOR PREVIEW ---
+  let isPlaying = false;
+  let waveOffset = 0;
+  let previewAnimationId = null;
+
+  // --- DRAW GENERATOR PREVIEW (ANIMATED) ---
   function drawPreview() {
     const width = previewCanvas.width = previewCanvas.clientWidth;
     const height = previewCanvas.height = previewCanvas.clientHeight;
     
     previewCtx.clearRect(0, 0, width, height);
     previewCtx.lineWidth = 2;
-    previewCtx.strokeStyle = '#38bdf8';
+    previewCtx.strokeStyle = isPlaying ? '#38bdf8' : '#555'; // Dim if not playing
     previewCtx.beginPath();
 
     const wave = waveformSelect.value;
-    const cycles = 3; // How many waves to draw
+    const cycles = 4; // Number of waves on screen
 
     for (let i = 0; i < width; i++) {
       let x = i / width;
+      // If playing, the wave scrolls based on the frequency
+      let phase = (x * cycles) + waveOffset; 
       let y = 0;
 
       if (wave === 'sine') {
-        y = Math.sin(x * Math.PI * 2 * cycles);
+        y = Math.sin(phase * Math.PI * 2);
       } else if (wave === 'square') {
-        y = Math.sin(x * Math.PI * 2 * cycles) >= 0 ? 1 : -1;
+        y = Math.sin(phase * Math.PI * 2) >= 0 ? 1 : -1;
       } else if (wave === 'sawtooth') {
-        y = 2 * (x * cycles - Math.floor(x * cycles + 0.5));
+        y = 2 * (phase - Math.floor(phase + 0.5));
       } else if (wave === 'triangle') {
-        y = 2 * Math.abs(2 * (x * cycles - Math.floor(x * cycles + 0.5))) - 1;
+        y = 2 * Math.abs(2 * (phase - Math.floor(phase + 0.5))) - 1;
       }
 
-      // Scale to canvas height
       let py = height / 2 - (y * height * 0.35);
       
       if (i === 0) previewCtx.moveTo(i, py);
       else previewCtx.lineTo(i, py);
     }
     previewCtx.stroke();
+
+    // If playing, move the wave and loop
+    if (isPlaying) {
+      // Speed of the scroll is tied to the frequency
+      waveOffset -= (freqSlider.value / 2000) * 0.15; 
+      previewAnimationId = requestAnimationFrame(drawPreview);
+    }
   }
 
-  waveformSelect.onchange = drawPreview;
-  window.addEventListener('resize', drawPreview);
-
-  // --- GENERATOR LOGIC ---
-  let osc = null;
-  let isPlaying = false;
-
+  // Draw the static wave when the user changes the settings
+  waveformSelect.onchange = () => { 
+    waveOffset = 0; 
+    cancelAnimationFrame(previewAnimationId);
+    drawPreview(); 
+  };
+  
   freqSlider.oninput = () => {
     freqVal.textContent = freqSlider.value + " Hz";
     if (osc) osc.frequency.setValueAtTime(freqSlider.value, audioCtx.currentTime);
   };
+
+  window.addEventListener('resize', () => {
+    cancelAnimationFrame(previewAnimationId);
+    drawPreview();
+  });
+
+  // --- GENERATOR LOGIC ---
+  let osc = null;
 
   btnPlay.onclick = () => {
     if (isPlaying) {
@@ -292,16 +306,22 @@
       btnPlay.classList.remove('playing');
       genDot.classList.remove('active');
       isPlaying = false;
+      
+      cancelAnimationFrame(previewAnimationId);
+      drawPreview(); // Draw static
     } else {
       osc = audioCtx.createOscillator();
       osc.type = waveformSelect.value;
       osc.frequency.setValueAtTime(freqSlider.value, audioCtx.currentTime);
       osc.connect(audioCtx.destination);
       osc.start();
+      
       btnPlay.innerHTML = `STOP SIGNAL`;
       btnPlay.classList.add('playing');
       genDot.classList.add('active');
       isPlaying = true;
+      
+      drawPreview(); // Start animated loop
     }
   };
 
@@ -314,7 +334,7 @@
   let analyser = null;
   let dataArray = null;
   let isMicOn = false;
-  let animationId = null;
+  let micAnimationId = null;
 
   btnMic.onclick = async () => {
     if (isMicOn) {
@@ -322,7 +342,7 @@
       btnMic.textContent = "START MICROPHONE";
       btnMic.classList.remove('active');
       micDot.classList.remove('recording');
-      cancelAnimationFrame(animationId);
+      cancelAnimationFrame(micAnimationId);
       micCtx.clearRect(0, 0, micCanvas.width, micCanvas.height);
       return;
     }
@@ -347,7 +367,7 @@
 
   function drawMic() {
     if (!isMicOn) return;
-    animationId = requestAnimationFrame(drawMic);
+    micAnimationId = requestAnimationFrame(drawMic);
     
     const width = micCanvas.width = micCanvas.clientWidth;
     const height = micCanvas.height = micCanvas.clientHeight;
@@ -358,7 +378,7 @@
     micCtx.fillRect(0, 0, width, height);
     
     micCtx.lineWidth = 2;
-    micCtx.strokeStyle = '#22c55e'; // Green trace
+    micCtx.strokeStyle = '#22c55e'; 
     micCtx.beginPath();
     
     const sliceWidth = width * 1.0 / dataArray.length;
