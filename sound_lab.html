@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sound Lab Pro - Synth Piano</title>
+<title>Ultimate Sound Studio</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap');
 
@@ -25,155 +25,105 @@
     background-size: 100% 100%, 30px 30px, 30px 30px;
   }
 
-  .dashboard {
-    width: 100%;
-    max-width: 1000px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
+  .studio { width: 100%; max-width: 900px; }
 
+  /* TABS */
+  .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+  .tab-btn {
+    flex: 1; padding: 15px; background: #1a1a1a; color: #666;
+    border: 1px solid #333; border-radius: 8px; cursor: pointer;
+    font-weight: bold; font-family: 'JetBrains Mono', monospace; transition: 0.2s;
+  }
+  .tab-btn.active { background: #38bdf8; color: #000; border-color: #38bdf8; }
+
+  /* PANEL */
   .panel {
-    background: rgba(15, 15, 20, 0.85);
-    border: 1px solid #333;
-    border-radius: 16px;
-    padding: 25px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
-    backdrop-filter: blur(10px);
-    position: relative;
-    overflow: hidden;
+    background: rgba(15, 15, 20, 0.9); border: 1px solid #333;
+    border-radius: 16px; padding: 25px; display: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
   }
-
-  .panel::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, #38bdf8, transparent);
-    opacity: 0.5;
-  }
-
-  h2 {
-    font-size: 14px;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    color: #888;
-    margin: 0 0 20px 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .status-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: #22c55e; box-shadow: 0 0 10px #22c55e;
-  }
+  .panel.active { display: block; }
 
   .controls { display: flex; gap: 20px; margin-bottom: 20px; }
   .control-group { flex: 1; }
-  
-  label {
-    display: block; font-size: 12px; color: #94a3b8; margin-bottom: 8px;
-    font-family: 'JetBrains Mono', monospace;
-  }
+  label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 8px; font-family: 'JetBrains Mono', monospace; }
+  select, input[type="range"] { width: 100%; padding: 12px; background: #111; color: #38bdf8; border: 1px solid #333; border-radius: 8px; font-family: 'JetBrains Mono', monospace; outline: none; }
 
-  select {
-    width: 100%; padding: 12px; background: #111; color: #38bdf8;
-    border: 1px solid #333; border-radius: 8px;
-    font-family: 'JetBrains Mono', monospace; font-size: 14px;
-    outline: none; cursor: pointer;
-  }
+  .screen { width: 100%; height: 150px; background: #000; border-radius: 8px; border: 1px solid #222; position: relative; margin-bottom: 20px; overflow: hidden; }
+  .screen-label { position: absolute; top: 10px; left: 15px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #444; z-index: 10; }
 
-  .screen {
-    width: 100%;
-    height: 150px;
-    background: #000;
-    border-radius: 8px;
-    border: 1px solid #222;
-    box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
-    position: relative;
-    margin-bottom: 20px;
+  button.action-btn {
+    width: 100%; padding: 16px; font-size: 14px; font-weight: 800; text-transform: uppercase;
+    border: none; border-radius: 8px; cursor: pointer; transition: 0.2s;
   }
-  
-  .screen-label {
-    position: absolute; top: 10px; left: 15px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px; color: #444;
-  }
+  #btn-play { background: #38bdf8; color: #000; }
+  #btn-play.playing { background: #ef4444; color: #fff; }
+  #btn-mic { background: #6366f1; color: #fff; }
+  #btn-mic.active { background: #ef4444; }
 
-  /* --- PIANO STYLES --- */
-  .piano-container {
-    display: flex;
-    justify-content: center;
-    position: relative;
-    height: 200px;
-    background: #1a1a1a;
-    padding: 10px;
-    border-radius: 10px;
-    box-shadow: inset 0 10px 20px rgba(0,0,0,0.8);
-  }
+  /* PIANO */
+  .piano-scroll { overflow-x: auto; overflow-y: hidden; background: #1a1a1a; padding: 10px; border-radius: 10px; white-space: nowrap; }
+  .piano { display: inline-flex; position: relative; height: 180px; }
+  .key { border-radius: 0 0 5px 5px; cursor: pointer; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 8px; font-size: 9px; font-family: 'JetBrains Mono', monospace; }
+  .key.white { width: 40px; height: 100%; background: linear-gradient(to bottom, #eee, #fff); border: 1px solid #999; color: #333; z-index: 1; }
+  .key.white.active { background: #38bdf8; color: #fff; }
+  .key.black { width: 28px; height: 60%; background: linear-gradient(to bottom, #111, #333); border: 1px solid #000; color: #aaa; position: absolute; z-index: 2; margin-left: -14px; }
+  .key.black.active { background: #0284c7; color: #fff; }
 
-  .key {
-    position: relative;
-    border-radius: 0 0 6px 6px;
-    cursor: pointer;
-    transition: background 0.1s, transform 0.1s;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    padding-bottom: 10px;
-    font-size: 10px;
-    font-family: 'JetBrains Mono', monospace;
-  }
-
-  .key.white {
-    width: 60px;
-    height: 100%;
-    background: linear-gradient(to bottom, #eee, #fff);
-    border: 1px solid #999;
-    color: #333;
-    z-index: 1;
-  }
-
-  .key.white:active, .key.white.active {
-    background: #38bdf8;
-    color: white;
-    transform: scaleY(0.98);
-    box-shadow: inset 0 5px 10px rgba(0,0,0,0.3);
-  }
-
-  .key.black {
-    width: 40px;
-    height: 60%;
-    background: linear-gradient(to bottom, #111, #333);
-    border: 1px solid #000;
-    color: #aaa;
-    position: absolute;
-    z-index: 2;
-    margin-left: -20px; /* Centers it between white keys */
-    box-shadow: 0 4px 6px rgba(0,0,0,0.5);
-  }
-
-  .key.black:active, .key.black.active {
-    background: #0284c7;
-    color: white;
-    transform: scaleY(0.95);
+  @media (max-width: 600px) {
+    .controls { flex-direction: column; }
   }
 </style>
 </head>
 <body>
 
-<div class="dashboard">
+<div class="studio">
   
-  <!-- SYNTH PIANO PANEL -->
-  <div class="panel">
-    <h2><div class="status-dot"></div> Synthesizer Piano</h2>
-    
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('synth')">SYNTH GENERATOR</button>
+    <button class="tab-btn" onclick="switchTab('mic')">MIC OSCILLOSCOPE</button>
+    <button class="tab-btn" onclick="switchTab('piano')">88-KEY PIANO</button>
+  </div>
+
+  <!-- SYNTH PANEL -->
+  <div class="panel active" id="panel-synth">
     <div class="controls">
       <div class="control-group">
         <label>Waveform</label>
-        <select id="waveform">
+        <select id="synth-wave">
+          <option value="sine">SINE</option>
+          <option value="square">SQUARE</option>
+          <option value="sawtooth">SAWTOOTH</option>
+          <option value="triangle">TRIANGLE</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Frequency <span id="synth-freq-val">440 Hz</span></label>
+        <input type="range" id="synth-freq" min="100" max="2000" value="440">
+      </div>
+    </div>
+    <div class="screen">
+      <div class="screen-label">OSCILLATOR OUTPUT</div>
+      <canvas id="synth-canvas"></canvas>
+    </div>
+    <button class="action-btn" id="btn-play">Play Signal</button>
+  </div>
+
+  <!-- MIC PANEL -->
+  <div class="panel" id="panel-mic">
+    <div class="screen">
+      <div class="screen-label">MIC INPUT</div>
+      <canvas id="mic-canvas"></canvas>
+    </div>
+    <button class="action-btn" id="btn-mic">Start Microphone</button>
+  </div>
+
+  <!-- PIANO PANEL -->
+  <div class="panel" id="panel-piano">
+    <div class="controls" style="margin-bottom:10px;">
+      <div class="control-group">
+        <label>Piano Waveform</label>
+        <select id="piano-wave">
           <option value="sine">SINE (Pure)</option>
           <option value="square">SQUARE (8-Bit)</option>
           <option value="sawtooth">SAWTOOTH (Brass)</option>
@@ -182,179 +132,255 @@
       </div>
       <div class="control-group">
         <label>Volume</label>
-        <input type="range" id="volume" min="0" max="100" value="50" style="width:100%;">
+        <input type="range" id="piano-vol" min="0" max="100" value="50">
       </div>
     </div>
-
-    <div class="screen">
-      <div class="screen-label">LIVE WAVEFORM</div>
-      <canvas id="preview-canvas"></canvas>
+    
+    <div class="screen" style="height: 100px;">
+      <div class="screen-label">PIANO OUTPUT</div>
+      <canvas id="piano-canvas"></canvas>
     </div>
 
-    <!-- 15-Key Piano (C4 to C6) -->
-    <div class="piano-container" id="piano">
-      <!-- White Keys -->
-      <div class="key white" data-freq="261.63">C4</div>
-      <div class="key white" data-freq="293.66">D4</div>
-      <div class="key white" data-freq="329.63">E4</div>
-      <div class="key white" data-freq="349.23">F4</div>
-      <div class="key white" data-freq="392.00">G4</div>
-      <div class="key white" data-freq="440.00">A4</div>
-      <div class="key white" data-freq="493.88">B4</div>
-      <div class="key white" data-freq="523.25">C5</div>
-      <div class="key white" data-freq="587.33">D5</div>
-      <div class="key white" data-freq="659.25">E5</div>
-      <div class="key white" data-freq="698.46">F5</div>
-      <div class="key white" data-freq="783.99">G5</div>
-      <div class="key white" data-freq="880.00">A5</div>
-      <div class="key white" data-freq="987.77">B5</div>
-      <div class="key white" data-freq="1046.50">C6</div>
-      
-      <!-- Black Keys (Positioned absolute) -->
-      <!-- We use CSS margins to overlap them -->
-      <div class="key black" style="left: 45px;" data-freq="277.18">C#4</div>
-      <div class="key black" style="left: 105px;" data-freq="311.13">D#4</div>
-      
-      <div class="key black" style="left: 225px;" data-freq="369.99">F#4</div>
-      <div class="key black" style="left: 285px;" data-freq="415.30">G#4</div>
-      <div class="key black" style="left: 345px;" data-freq="466.16">A#4</div>
-
-      <div class="key black" style="left: 465px;" data-freq="554.37">C#5</div>
-      <div class="key black" style="left: 525px;" data-freq="622.25">D#5</div>
-
-      <div class="key black" style="left: 645px;" data-freq="739.99">F#5</div>
-      <div class="key black" style="left: 705px;" data-freq="830.61">G#5</div>
-      <div class="key black" style="left: 765px;" data-freq="932.33">A#5</div>
+    <div style="font-size:12px; color:#94a3b8; margin-bottom: 10px;">Swipe/Scroll horizontally to play all octaves</div>
+    
+    <!-- Scrollable Piano Container -->
+    <div class="piano-scroll">
+      <div class="piano" id="piano-keys">
+        <!-- Javascript will generate the keys here -->
+      </div>
     </div>
   </div>
+
 </div>
 
 <script>
   const AudioContext = window.AudioContext || window.webkitAudioContext;
   const audioCtx = new AudioContext();
-  
-  const waveformSelect = document.getElementById('waveform');
-  const volumeSlider = document.getElementById('volume');
-  const previewCanvas = document.getElementById('preview-canvas');
-  const previewCtx = previewCanvas.getContext('2d');
-
-  let osc = null;
-  let genAnalyser = null;
-  let genDataArray = null;
-  let isPlaying = false;
-  let genAnimationId = null;
-
-  // Main volume control
-  let masterGain = audioCtx.createGain();
-  masterGain.gain.value = 0.5; // Default 50%
+  const masterGain = audioCtx.createGain();
   masterGain.connect(audioCtx.destination);
 
-  volumeSlider.oninput = () => {
-    masterGain.gain.value = volumeSlider.value / 100;
+  // --- TAB LOGIC ---
+  function switchTab(tabId) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(`panel-${tabId}`).classList.add('active');
+    event.target.classList.add('active');
+  }
+
+  // --- SYNTH GENERATOR LOGIC ---
+  const btnPlay = document.getElementById('btn-play');
+  const synthWave = document.getElementById('synth-wave');
+  const synthFreq = document.getElementById('synth-freq');
+  const synthFreqVal = document.getElementById('synth-freq-val');
+  const synthCanvas = document.getElementById('synth-canvas');
+  const synthCtx = synthCanvas.getContext('2d');
+  
+  let synthOsc = null;
+  let synthAnalyser = null;
+  let synthData = null;
+  let isSynthPlaying = false;
+  let synthAnimId = null;
+
+  synthFreq.oninput = () => {
+    synthFreqVal.textContent = synthFreq.value + " Hz";
+    if (synthOsc) synthOsc.frequency.setValueAtTime(synthFreq.value, audioCtx.currentTime);
   };
 
-  // --- PIANO LOGIC ---
-  function playNote(freq) {
-    // If a note is already playing, stop it
-    if (osc) {
-      osc.stop();
-      osc.disconnect();
-      cancelAnimationFrame(genAnimationId);
-    }
-
-    // Create new oscillator
-    osc = audioCtx.createOscillator();
-    osc.type = waveformSelect.value;
-    osc.frequency.value = freq;
-
-    // Create analyser for the visualizer
-    genAnalyser = audioCtx.createAnalyser();
-    genAnalyser.fftSize = 2048;
-    
-    osc.connect(genAnalyser);
-    genAnalyser.connect(masterGain); // Connect to master volume
-    
-    osc.start();
-    genDataArray = new Uint8Array(genAnalyser.frequencyBinCount);
-    isPlaying = true;
-    
-    drawGen();
-  }
-
-  function stopNote() {
-    if (osc) {
-      osc.stop();
-      osc.disconnect();
-      osc = null;
-      isPlaying = false;
-      cancelAnimationFrame(genAnimationId);
-      previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-    }
-  }
-
-  // Attach events to keys (Mouse & Touch)
-  const keys = document.querySelectorAll('.key');
-  keys.forEach(key => {
-    const freq = parseFloat(key.getAttribute('data-freq'));
-    
-    // When pressed
-    key.addEventListener('pointerdown', (e) => {
-      e.preventDefault(); // Prevent scrolling on mobile
-      key.classList.add('active');
-      playNote(freq);
-    });
-
-    // When released
-    key.addEventListener('pointerup', () => {
-      key.classList.remove('active');
-      stopNote();
-    });
-    
-    key.addEventListener('pointerleave', () => {
-      key.classList.remove('active');
-      stopNote();
-    });
-  });
-
-  // --- VISUALIZER ---
-  function drawGen() {
-    if (!isPlaying) return;
-    genAnimationId = requestAnimationFrame(drawGen);
-    
-    const width = previewCanvas.width = previewCanvas.clientWidth;
-    const height = previewCanvas.height = previewCanvas.clientHeight;
-
-    genAnalyser.getByteTimeDomainData(genDataArray);
-    
-    previewCtx.fillStyle = '#000';
-    previewCtx.fillRect(0, 0, width, height);
-    
-    previewCtx.lineWidth = 2;
-    previewCtx.strokeStyle = '#38bdf8'; 
-    previewCtx.beginPath();
-    
-    const sliceWidth = width * 1.0 / genDataArray.length;
-    let x = 0;
-    
-    for (let i = 0; i < genDataArray.length; i++) {
-      const v = genDataArray[i] / 128.0;
-      const y = v * height / 2;
+  btnPlay.onclick = () => {
+    if (isSynthPlaying) {
+      synthOsc.stop(); synthOsc.disconnect(); synthAnalyser.disconnect();
+      synthOsc = null; isSynthPlaying = false;
+      btnPlay.textContent = "Play Signal"; btnPlay.classList.remove('playing');
+      cancelAnimationFrame(synthAnimId);
+      synthCtx.clearRect(0, 0, synthCanvas.width, synthCanvas.height);
+    } else {
+      synthOsc = audioCtx.createOscillator();
+      synthOsc.type = synthWave.value;
+      synthOsc.frequency.setValueAtTime(synthFreq.value, audioCtx.currentTime);
       
-      if (i === 0) previewCtx.moveTo(x, y);
-      else previewCtx.lineTo(x, y);
+      synthAnalyser = audioCtx.createAnalyser();
+      synthAnalyser.fftSize = 2048;
+      synthOsc.connect(synthAnalyser);
+      synthAnalyser.connect(masterGain);
+      synthOsc.start();
       
-      x += sliceWidth;
+      synthData = new Uint8Array(synthAnalyser.frequencyBinCount);
+      isSynthPlaying = true;
+      btnPlay.textContent = "Stop Signal"; btnPlay.classList.add('playing');
+      drawSynth();
     }
+  };
+
+  function drawSynth() {
+    if (!isSynthPlaying) return;
+    synthAnimId = requestAnimationFrame(drawSynth);
+    const w = synthCanvas.width = synthCanvas.clientWidth;
+    const h = synthCanvas.height = synthCanvas.clientHeight;
+    synthAnalyser.getByteTimeDomainData(synthData);
     
-    previewCtx.lineTo(width, height / 2);
-    previewCtx.stroke();
+    synthCtx.fillStyle = '#000'; synthCtx.fillRect(0, 0, w, h);
+    synthCtx.lineWidth = 2; synthCtx.strokeStyle = '#38bdf8'; synthCtx.beginPath();
+    
+    const slice = w / synthData.length;
+    for (let i = 0; i < synthData.length; i++) {
+      const y = (synthData[i] / 128.0) * h / 2;
+      if (i === 0) synthCtx.moveTo(0, y);
+      else synthCtx.lineTo(i * slice, y);
+    }
+    synthCtx.stroke();
   }
 
-  // Resume audio context on first click (Browser security requirement)
-  document.body.addEventListener('click', () => {
-    if (audioCtx.state === 'suspended') {
-      audioCtx.resume();
+  // --- MIC LOGIC ---
+  const btnMic = document.getElementById('btn-mic');
+  const micCanvas = document.getElementById('mic-canvas');
+  const micCtx = micCanvas.getContext('2d');
+  
+  let micAnalyser = null;
+  let micData = null;
+  let isMicOn = false;
+  let micAnimId = null;
+
+  btnMic.onclick = async () => {
+    if (isMicOn) {
+      isMicOn = false; btnMic.textContent = "Start Microphone"; btnMic.classList.remove('active');
+      cancelAnimationFrame(micAnimId);
+      micCtx.clearRect(0, 0, micCanvas.width, micCanvas.height);
+      return;
     }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const source = audioCtx.createMediaStreamSource(stream);
+      micAnalyser = audioCtx.createAnalyser(); micAnalyser.fftSize = 2048;
+      source.connect(micAnalyser);
+      micData = new Uint8Array(micAnalyser.frequencyBinCount);
+      isMicOn = true; btnMic.textContent = "Stop Microphone"; btnMic.classList.add('active');
+      drawMic();
+    } catch (err) { alert("Mic denied."); }
+  };
+
+  function drawMic() {
+    if (!isMicOn) return;
+    micAnimId = requestAnimationFrame(drawMic);
+    const w = micCanvas.width = micCanvas.clientWidth;
+    const h = micCanvas.height = micCanvas.clientHeight;
+    micAnalyser.getByteTimeDomainData(micData);
+    
+    micCtx.fillStyle = '#000'; micCtx.fillRect(0, 0, w, h);
+    micCtx.lineWidth = 2; micCtx.strokeStyle = '#22c55e'; micCtx.beginPath();
+    
+    const slice = w / micData.length;
+    for (let i = 0; i < micData.length; i++) {
+      const y = (micData[i] / 128.0) * h / 2;
+      if (i === 0) micCtx.moveTo(0, y);
+      else micCtx.lineTo(i * slice, y);
+    }
+    micCtx.stroke();
+  }
+
+  // --- PIANO LOGIC (Generates 36 keys: C3 to C6) ---
+  const pianoWave = document.getElementById('piano-wave');
+  const pianoVol = document.getElementById('piano-vol');
+  const pianoContainer = document.getElementById('piano-keys');
+  const pianoCanvas = document.getElementById('piano-canvas');
+  const pianoCtx = pianoCanvas.getContext('2d');
+
+  let pianoOsc = null;
+  let pianoAnalyser = null;
+  let pianoData = null;
+  let pianoAnimId = null;
+  let isPianoPlaying = false;
+
+  pianoVol.oninput = () => { masterGain.gain.value = pianoVol.value / 100; };
+
+  const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  
+  // Generate keys (3 octaves)
+  for (let octave = 3; octave <= 6; octave++) {
+    for (let i = 0; i < 12; i++) {
+      // Stop at C6
+      if (octave === 6 && i > 0) break;
+      
+      const noteName = notes[i];
+      const isSharp = noteName.includes('#');
+      
+      // Math for frequency: 440 * 2^((n-69)/12)
+      const midiNote = (octave + 1) * 12 + i;
+      const freq = 440 * Math.pow(2, (midiNote - 69) / 12);
+
+      const key = document.createElement('div');
+      key.className = `key ${isSharp ? 'black' : 'white'}`;
+      key.textContent = noteName + octave;
+      
+      // Calculate left offset for black keys
+      if (isSharp) {
+        // Find the white key it sits on top of
+        const whiteKeyIndex = (octave - 3) * 7 + Math.ceil(i / 2);
+        key.style.left = `${whiteKeyIndex * 40}px`;
+      }
+
+      // Touch/Mouse events
+      key.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        key.classList.add('active');
+        playPianoNote(freq, pianoWave.value);
+      });
+      
+      key.addEventListener('pointerup', () => { key.classList.remove('active'); stopPianoNote(); });
+      key.addEventListener('pointerleave', () => { key.classList.remove('active'); stopPianoNote(); });
+
+      pianoContainer.appendChild(key);
+    }
+  }
+
+  function playPianoNote(freq, waveType) {
+    if (pianoOsc) { pianoOsc.stop(); pianoOsc.disconnect(); cancelAnimationFrame(pianoAnimId); }
+    
+    pianoOsc = audioCtx.createOscillator();
+    pianoOsc.type = waveType;
+    pianoOsc.frequency.value = freq;
+    
+    pianoAnalyser = audioCtx.createAnalyser();
+    pianoAnalyser.fftSize = 2048;
+    pianoOsc.connect(pianoAnalyser);
+    pianoAnalyser.connect(masterGain);
+    pianoOsc.start();
+    
+    pianoData = new Uint8Array(pianoAnalyser.frequencyBinCount);
+    isPianoPlaying = true;
+    drawPiano();
+  }
+
+  function stopPianoNote() {
+    if (pianoOsc) {
+      pianoOsc.stop(); pianoOsc.disconnect();
+      pianoOsc = null; isPianoPlaying = false;
+      cancelAnimationFrame(pianoAnimId);
+      pianoCtx.clearRect(0, 0, pianoCanvas.width, pianoCanvas.height);
+    }
+  }
+
+  function drawPiano() {
+    if (!isPianoPlaying) return;
+    pianoAnimId = requestAnimationFrame(drawPiano);
+    const w = pianoCanvas.width = pianoCanvas.clientWidth;
+    const h = pianoCanvas.height = pianoCanvas.clientHeight;
+    
+    pianoAnalyser.getByteTimeDomainData(pianoData);
+    pianoCtx.fillStyle = '#000'; pianoCtx.fillRect(0, 0, w, h);
+    pianoCtx.lineWidth = 2; pianoCtx.strokeStyle = '#facc15'; pianoCtx.beginPath();
+    
+    const slice = w / pianoData.length;
+    for (let i = 0; i < pianoData.length; i++) {
+      const y = (pianoData[i] / 128.0) * h / 2;
+      if (i === 0) pianoCtx.moveTo(0, y);
+      else pianoCtx.lineTo(i * slice, y);
+    }
+    pianoCtx.stroke();
+  }
+
+  // Resume Audio Context on first interaction
+  document.body.addEventListener('pointerdown', () => {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
   }, { once: true });
 
 </script>
