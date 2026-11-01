@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sound Lab: Generator & Detector</title>
+<style>
+  body {
+    background-color: #0f172a;
+    color: white;
+    font-family: system-ui, sans-serif;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  h1 { margin: 0 0 10px; color: #38bdf8; font-size: 24px;}
+  
+  .panel {
+    background: #1e293b;
+    border-radius: 12px;
+    padding: 20px;
+    width: 100%;
+    max-width: 800px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+  }
+  
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 15px;
+  }
+  
+  label { font-size: 14px; color: #94a3b8; display: block; margin-bottom: 5px; }
+  select, input[type="range"] { width: 100%; padding: 10px; border-radius: 6px; border: none; background: #334155; color: white; }
+  
+  button {
+    width: 100%;
+    padding: 15px;
+    font-size: 18px;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  
+  #btn-play { background: #22c55e; color: white; }
+  #btn-play.playing { background: #ef4444; }
+  #btn-mic { background: #6366f1; color: white; }
+  
+  canvas {
+    width: 100%;
+    height: 200px;
+    background: #020617;
+    border-radius: 8px;
+    border: 1px solid #334155;
+  }
+</style>
+</head>
+<body>
+
+  <h1>🔊 Sound Lab</h1>
+  
+  <!-- GENERATOR PANEL -->
+  <div class="panel">
+    <h2>Generator</h2>
+    <div class="controls">
+      <div>
+        <label>Waveform</label>
+        <select id="waveform">
+          <option value="sine">Sine (Pure)</option>
+          <option value="square">Square</option>
+          <option value="sawtooth">Sawtooth</option>
+          <option value="triangle">Triangle</option>
+        </select>
+      </div>
+      <div>
+        <label>Frequency (Hz) <span id="freq-val">440</span></label>
+        <input type="range" id="frequency" min="100" max="2000" value="440">
+      </div>
+    </div>
+    <button id="btn-play">PLAY SOUND</button>
+  </div>
+
+  <!-- DETECTOR PANEL -->
+  <div class="panel">
+    <h2>Live Detector</h2>
+    <button id="btn-mic" style="margin-bottom: 15px;">START MICROPHONE</button>
+    <canvas id="oscilloscope" width="800" height="200"></canvas>
+  </div>
+
+<script>
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  const audioCtx = new AudioContext();
+  
+  const canvas = document.getElementById('oscilloscope');
+  const canvasCtx = canvas.getContext('2d');
+  
+  // --- 1. GENERATOR LOGIC ---
+  let osc = null;
+  let isPlaying = false;
+  
+  const btnPlay = document.getElementById('btn-play');
+  const waveformSelect = document.getElementById('waveform');
+  const freqSlider = document.getElementById('frequency');
+  const freqVal = document.getElementById('freq-val');
+
+  freqSlider.oninput = () => {
+    freqVal.textContent = freqSlider.value;
+    if (osc) osc.frequency.setValueAtTime(freqSlider.value, audioCtx.currentTime);
+  };
+
+  btnPlay.onclick = () => {
+    if (isPlaying) {
+      osc.stop();
+      osc.disconnect();
+      osc = null;
+      btnPlay.textContent = "PLAY SOUND";
+      btnPlay.classList.remove('playing');
+      isPlaying = false;
+    } else {
+      osc = audioCtx.createOscillator();
+      osc.type = waveformSelect.value;
+      osc.frequency.setValueAtTime(freqSlider.value, audioCtx.currentTime);
+      osc.connect(audioCtx.destination);
+      osc.start();
+      btnPlay.textContent = "STOP SOUND";
+      btnPlay.classList.add('playing');
+      isPlaying = true;
+    }
+  };
+
+  // --- 2. LIVE MIC DETECTOR LOGIC ---
+  const btnMic = document.getElementById('btn-mic');
+  let analyser = null;
+  let dataArray = null;
+  let isMicOn = false;
+  let animationId = null;
+
+  btnMic.onclick = async () => {
+    if (isMicOn) {
+      isMicOn = false;
+      btnMic.textContent = "START MICROPHONE";
+      cancelAnimationFrame(animationId);
+      canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const source = audioCtx.createMediaStreamSource(stream);
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 2048;
+      source.connect(analyser);
+      
+      dataArray = new Uint8Array(analyser.frequencyBinCount);
+      isMicOn = true;
+      btnMic.textContent = "STOP MICROPHONE";
+      drawMic();
+    } catch (err) {
+      alert("Microphone access denied or not available.");
+    }
+  };
+
+  function drawMic() {
+    if (!isMicOn) return;
+    animationId = requestAnimationFrame(drawMic);
+    
+    analyser.getByteTimeDomainData(dataArray);
+    
+    canvasCtx.fillStyle = '#020617';
+    canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    canvasCtx.lineWidth = 3;
+    canvasCtx.strokeStyle = '#22d3ee'; // Cyan line
+    canvasCtx.beginPath();
+    
+    const sliceWidth = canvas.width * 1.0 / dataArray.length;
+    let x = 0;
+    
+    for (let i = 0; i < dataArray.length; i++) {
+      const v = dataArray[i] / 128.0;
+      const y = v * canvas.height / 2;
+      
+      if (i === 0) canvasCtx.moveTo(x, y);
+      else canvasCtx.lineTo(x, y);
+      
+      x += sliceWidth;
+    }
+    
+    canvasCtx.lineTo(canvas.width, canvas.height / 2);
+    canvasCtx.stroke();
+  }
+</script>
+</body>
+</html>
