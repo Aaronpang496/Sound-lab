@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sound Lab Pro</title>
+<title>Sound Lab Pro - ANC</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap');
 
@@ -95,9 +95,7 @@
     outline: none;
     cursor: pointer;
     appearance: none;
-    transition: 0.2s;
   }
-  select:focus { border-color: #38bdf8; box-shadow: 0 0 10px rgba(56,189,248,0.2); }
 
   input[type="range"] {
     width: 100%;
@@ -116,9 +114,7 @@
     margin-top: -6px;
     box-shadow: 0 0 10px rgba(255,255,255,0.5);
     cursor: pointer;
-    transition: 0.1s;
   }
-  input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
 
   button {
     width: 100%;
@@ -126,7 +122,6 @@
     font-size: 14px;
     font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 1px;
     border: none;
     border-radius: 8px;
     cursor: pointer;
@@ -135,12 +130,23 @@
   }
 
   #btn-play { background: #38bdf8; color: #000; }
-  #btn-play:hover { background: #0ea5e9; box-shadow: 0 0 20px rgba(56,189,248,0.4); }
-  #btn-play.playing { background: #ef4444; color: #fff; box-shadow: 0 0 20px rgba(239,68,68,0.4); }
+  #btn-play.playing { background: #ef4444; color: #fff; }
 
-  #btn-mic { background: #6366f1; color: #fff; margin-bottom: 15px;}
-  #btn-mic:hover { background: #4f46e5; box-shadow: 0 0 20px rgba(99,102,241,0.4); }
+  #btn-mic { background: #6366f1; color: #fff; }
   #btn-mic.active { background: #ef4444; }
+
+  /* NEW ANC BUTTON */
+  #btn-anc { 
+    background: #333; 
+    color: #fff; 
+    margin-top: 15px; 
+    border: 1px solid #555;
+  }
+  #btn-anc.active { 
+    background: #facc15; 
+    color: #000; 
+    box-shadow: 0 0 20px rgba(250, 204, 21, 0.5); 
+  }
 
   .screen {
     width: 100%;
@@ -156,7 +162,7 @@
   .screen-label {
     position: absolute; top: 10px; left: 15px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 10px; color: #444; letter-spacing: 1px;
+    font-size: 10px; color: #444;
     z-index: 10;
   }
 
@@ -172,7 +178,6 @@
   <!-- GENERATOR PANEL -->
   <div class="panel">
     <h2><div class="status-dot" id="gen-dot"></div> Generator</h2>
-    
     <div class="control-group">
       <label>Waveform</label>
       <select id="waveform">
@@ -182,35 +187,35 @@
         <option value="triangle">TRIANGLE</option>
       </select>
     </div>
-
     <div class="control-group">
       <label>Frequency <span id="freq-val">440 Hz</span></label>
       <input type="range" id="frequency" min="100" max="2000" value="440">
     </div>
-
     <div class="screen" style="margin-bottom: 20px;">
-      <div class="screen-label">OSCILLATOR PREVIEW</div>
+      <div class="screen-label">REAL-TIME OUTPUT</div>
       <canvas id="preview-canvas"></canvas>
     </div>
-
     <button id="btn-play">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> 
       Play Signal
     </button>
   </div>
 
-  <!-- DETECTOR PANEL -->
+  <!-- ANC / DETECTOR PANEL -->
   <div class="panel">
-    <h2><div class="status-dot" id="mic-dot"></div> Live Detector</h2>
-    
+    <h2><div class="status-dot" id="mic-dot"></div> ANC & Live Detector</h2>
     <div class="screen" style="margin-bottom: 20px;">
       <div class="screen-label">MIC OSCILLOSCOPE</div>
       <canvas id="mic-canvas"></canvas>
     </div>
-
+    
     <button id="btn-mic">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
       Start Microphone
+    </button>
+
+    <button id="btn-anc" disabled style="opacity: 0.5;">
+      Enable Noise Cancelling
     </button>
   </div>
 
@@ -220,113 +225,83 @@
   const AudioContext = window.AudioContext || window.webkitAudioContext;
   const audioCtx = new AudioContext();
   
+  // --- 1. GENERATOR SETUP ---
   const btnPlay = document.getElementById('btn-play');
   const genDot = document.getElementById('gen-dot');
   const waveformSelect = document.getElementById('waveform');
   const freqSlider = document.getElementById('frequency');
   const freqVal = document.getElementById('freq-val');
-
   const previewCanvas = document.getElementById('preview-canvas');
   const previewCtx = previewCanvas.getContext('2d');
 
+  let osc = null;
+  let genAnalyser = null;
+  let genDataArray = null;
   let isPlaying = false;
-  let waveOffset = 0;
-  let previewAnimationId = null;
+  let genAnimationId = null;
 
-  // --- DRAW GENERATOR PREVIEW (ANIMATED) ---
-  function drawPreview() {
-    const width = previewCanvas.width = previewCanvas.clientWidth;
-    const height = previewCanvas.height = previewCanvas.clientHeight;
-    
-    previewCtx.clearRect(0, 0, width, height);
-    previewCtx.lineWidth = 2;
-    previewCtx.strokeStyle = isPlaying ? '#38bdf8' : '#555'; // Dim if not playing
-    previewCtx.beginPath();
-
-    const wave = waveformSelect.value;
-    const cycles = 4; // Number of waves on screen
-
-    for (let i = 0; i < width; i++) {
-      let x = i / width;
-      // If playing, the wave scrolls based on the frequency
-      let phase = (x * cycles) + waveOffset; 
-      let y = 0;
-
-      if (wave === 'sine') {
-        y = Math.sin(phase * Math.PI * 2);
-      } else if (wave === 'square') {
-        y = Math.sin(phase * Math.PI * 2) >= 0 ? 1 : -1;
-      } else if (wave === 'sawtooth') {
-        y = 2 * (phase - Math.floor(phase + 0.5));
-      } else if (wave === 'triangle') {
-        y = 2 * Math.abs(2 * (phase - Math.floor(phase + 0.5))) - 1;
-      }
-
-      let py = height / 2 - (y * height * 0.35);
-      
-      if (i === 0) previewCtx.moveTo(i, py);
-      else previewCtx.lineTo(i, py);
-    }
-    previewCtx.stroke();
-
-    // If playing, move the wave and loop
-    if (isPlaying) {
-      // Speed of the scroll is tied to the frequency
-      waveOffset -= (freqSlider.value / 2000) * 0.15; 
-      previewAnimationId = requestAnimationFrame(drawPreview);
-    }
-  }
-
-  // Draw the static wave when the user changes the settings
-  waveformSelect.onchange = () => { 
-    waveOffset = 0; 
-    cancelAnimationFrame(previewAnimationId);
-    drawPreview(); 
-  };
-  
   freqSlider.oninput = () => {
     freqVal.textContent = freqSlider.value + " Hz";
     if (osc) osc.frequency.setValueAtTime(freqSlider.value, audioCtx.currentTime);
   };
 
-  window.addEventListener('resize', () => {
-    cancelAnimationFrame(previewAnimationId);
-    drawPreview();
-  });
-
-  // --- GENERATOR LOGIC ---
-  let osc = null;
-
   btnPlay.onclick = () => {
     if (isPlaying) {
-      osc.stop();
-      osc.disconnect();
-      osc = null;
+      osc.stop(); osc.disconnect(); genAnalyser.disconnect();
+      osc = null; genAnalyser = null;
       btnPlay.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> Play Signal`;
-      btnPlay.classList.remove('playing');
-      genDot.classList.remove('active');
-      isPlaying = false;
-      
-      cancelAnimationFrame(previewAnimationId);
-      drawPreview(); // Draw static
+      btnPlay.classList.remove('playing'); genDot.classList.remove('active');
+      isPlaying = false; cancelAnimationFrame(genAnimationId);
+      previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
     } else {
       osc = audioCtx.createOscillator();
       osc.type = waveformSelect.value;
       osc.frequency.setValueAtTime(freqSlider.value, audioCtx.currentTime);
-      osc.connect(audioCtx.destination);
+      
+      genAnalyser = audioCtx.createAnalyser();
+      genAnalyser.fftSize = 2048;
+      
+      osc.connect(genAnalyser);
+      genAnalyser.connect(audioCtx.destination);
       osc.start();
       
+      genDataArray = new Uint8Array(genAnalyser.frequencyBinCount);
       btnPlay.innerHTML = `STOP SIGNAL`;
-      btnPlay.classList.add('playing');
-      genDot.classList.add('active');
+      btnPlay.classList.add('playing'); genDot.classList.add('active');
       isPlaying = true;
-      
-      drawPreview(); // Start animated loop
+      drawGen();
     }
   };
 
-  // --- MIC LOGIC ---
+  function drawGen() {
+    if (!isPlaying) return;
+    genAnimationId = requestAnimationFrame(drawGen);
+    const width = previewCanvas.width = previewCanvas.clientWidth;
+    const height = previewCanvas.height = previewCanvas.clientHeight;
+    genAnalyser.getByteTimeDomainData(genDataArray);
+    
+    previewCtx.fillStyle = '#000';
+    previewCtx.fillRect(0, 0, width, height);
+    previewCtx.lineWidth = 2; previewCtx.strokeStyle = '#38bdf8'; 
+    previewCtx.beginPath();
+    
+    const sliceWidth = width * 1.0 / genDataArray.length;
+    let x = 0;
+    
+    for (let i = 0; i < genDataArray.length; i++) {
+      const v = genDataArray[i] / 128.0;
+      const y = v * height / 2;
+      if (i === 0) previewCtx.moveTo(x, y);
+      else previewCtx.lineTo(x, y);
+      x += sliceWidth;
+    }
+    previewCtx.lineTo(width, height / 2);
+    previewCtx.stroke();
+  }
+
+  // --- 2. MIC & ANC SETUP ---
   const btnMic = document.getElementById('btn-mic');
+  const btnAnc = document.getElementById('btn-anc');
   const micDot = document.getElementById('mic-dot');
   const micCanvas = document.getElementById('mic-canvas');
   const micCtx = micCanvas.getContext('2d');
@@ -336,6 +311,11 @@
   let isMicOn = false;
   let micAnimationId = null;
 
+  let micStream = null;
+  let micSource = null;
+  let ancGain = null;
+  let isAncOn = false;
+
   btnMic.onclick = async () => {
     if (isMicOn) {
       isMicOn = false;
@@ -344,26 +324,73 @@
       micDot.classList.remove('recording');
       cancelAnimationFrame(micAnimationId);
       micCtx.clearRect(0, 0, micCanvas.width, micCanvas.height);
+      
+      // Turn off ANC if it was on
+      if (isAncOn) toggleAnc();
+      
+      // Stop microphone
+      if (micStream) {
+        micStream.getTracks().forEach(track => track.stop());
+        micStream = null;
+      }
+      btnAnc.disabled = true;
+      btnAnc.style.opacity = "0.5";
       return;
     }
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const source = audioCtx.createMediaStreamSource(stream);
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      micSource = audioCtx.createMediaStreamSource(micStream);
+      
       analyser = audioCtx.createAnalyser();
       analyser.fftSize = 2048;
-      source.connect(analyser);
+      micSource.connect(analyser);
       
       dataArray = new Uint8Array(analyser.frequencyBinCount);
       isMicOn = true;
+      
       btnMic.textContent = "STOP MICROPHONE";
       btnMic.classList.add('active');
       micDot.classList.add('recording');
+      
+      // Enable the ANC button
+      btnAnc.disabled = false;
+      btnAnc.style.opacity = "1";
+      
       drawMic();
     } catch (err) {
       alert("Microphone access denied.");
     }
   };
+
+  // --- THE NOISE CANCELLING MAGIC ---
+  function toggleAnc() {
+    if (!isMicOn) return;
+    
+    if (isAncOn) {
+      // Turn it off
+      micSource.disconnect(ancGain);
+      ancGain.disconnect(audioCtx.destination);
+      ancGain = null;
+      isAncOn = false;
+      btnAnc.textContent = "Enable Noise Cancelling";
+      btnAnc.classList.remove('active');
+    } else {
+      // Turn it on
+      ancGain = audioCtx.createGain();
+      ancGain.gain.value = -1; // INVERT THE PHASE (Negative 1)
+      
+      // Connect mic -> invert -> speakers
+      micSource.connect(ancGain);
+      ancGain.connect(audioCtx.destination);
+      
+      isAncOn = true;
+      btnAnc.textContent = "CANCELING NOISE (ACTIVE)";
+      btnAnc.classList.add('active');
+    }
+  }
+
+  btnAnc.onclick = toggleAnc;
 
   function drawMic() {
     if (!isMicOn) return;
@@ -371,14 +398,12 @@
     
     const width = micCanvas.width = micCanvas.clientWidth;
     const height = micCanvas.height = micCanvas.clientHeight;
-
     analyser.getByteTimeDomainData(dataArray);
     
     micCtx.fillStyle = '#000';
     micCtx.fillRect(0, 0, width, height);
     
-    micCtx.lineWidth = 2;
-    micCtx.strokeStyle = '#22c55e'; 
+    micCtx.lineWidth = 2; micCtx.strokeStyle = '#22c55e'; 
     micCtx.beginPath();
     
     const sliceWidth = width * 1.0 / dataArray.length;
@@ -387,19 +412,13 @@
     for (let i = 0; i < dataArray.length; i++) {
       const v = dataArray[i] / 128.0;
       const y = v * height / 2;
-      
       if (i === 0) micCtx.moveTo(x, y);
       else micCtx.lineTo(x, y);
-      
       x += sliceWidth;
     }
-    
     micCtx.lineTo(width, height / 2);
     micCtx.stroke();
   }
-
-  // Initialize Preview
-  drawPreview();
 </script>
 </body>
 </html>
