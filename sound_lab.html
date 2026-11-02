@@ -3,147 +3,72 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Studio Pro Max · Active Noise Cancel</title>
+<title>Studio Pro Max</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap');
-
   * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
-  
   body {
-    background-color: #0b0b0e;
-    color: #e2e8f0;
-    font-family: 'Inter', sans-serif;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    overflow: hidden;
+    background-color: #0b0b0e; color: #e2e8f0;
+    font-family: 'Inter', sans-serif; margin: 0;
+    display: flex; flex-direction: column; height: 100vh; overflow: hidden;
   }
-
   header {
-    background: #121216;
-    border-bottom: 1px solid #222;
-    padding: max(20px, env(safe-area-inset-top)) 15px 15px 15px; 
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    flex-shrink: 0;
+    background: #121216; border-bottom: 1px solid #222;
+    padding: max(20px, env(safe-area-inset-top)) 15px 15px 15px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 12px; flex-shrink: 0;
   }
-  
   .logo {
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 700;
-    font-size: 16px;
-    color: #38bdf8;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    letter-spacing: 2px;
+    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 16px;
+    color: #38bdf8; display: flex; align-items: center; gap: 8px; letter-spacing: 2px;
   }
   .logo::before {
-    content: '';
-    display: block;
-    width: 10px; height: 10px;
-    background: #38bdf8;
-    border-radius: 50%;
-    box-shadow: 0 0 10px #38bdf8;
+    content: ''; display: block; width: 10px; height: 10px;
+    background: #38bdf8; border-radius: 50%; box-shadow: 0 0 10px #38bdf8;
   }
-  
-  .nav-tabs { 
-    display: flex; 
-    gap: 6px; 
-    width: 100%;
-    max-width: 400px;
-    justify-content: center;
-  }
-  
+  .nav-tabs { display: flex; gap: 6px; width: 100%; max-width: 400px; justify-content: center; }
   .nav-btn {
-    background: #1a1a20;
-    color: #64748b;
-    border: 1px solid #27272a;
-    padding: 10px 15px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: 0.2s;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    flex: 1;
+    background: #1a1a20; color: #64748b; border: 1px solid #27272a;
+    padding: 10px 15px; border-radius: 6px; font-size: 11px; font-weight: 700;
+    cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px; flex: 1;
   }
-  
   .nav-btn:hover { color: #e2e8f0; background: #27272a; }
   .nav-btn.active {
-    color: #38bdf8;
-    background: #0f172a;
-    border-color: #1e3a8a;
+    color: #38bdf8; background: #0f172a; border-color: #1e3a8a;
     box-shadow: 0 0 10px rgba(56, 189, 248, 0.1);
   }
-
-  .workspace {
-    flex: 1;
-    padding: 15px;
-    display: flex;
-    justify-content: center;
-    overflow-y: auto;
-  }
-  .panel {
-    width: 100%;
-    max-width: 900px;
-    display: none;
-    flex-direction: column;
-    gap: 15px;
-  }
+  .workspace { flex: 1; padding: 15px; display: flex; justify-content: center; overflow-y: auto; }
+  .panel { width: 100%; max-width: 900px; display: none; flex-direction: column; gap: 15px; }
   .panel.active { display: flex; }
-
   .module {
-    background: #141419;
-    border: 1px solid #27272a;
-    border-radius: 12px;
-    padding: 15px;
+    background: #141419; border: 1px solid #27272a; border-radius: 12px; padding: 15px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
   }
-  
   .module-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    color: #52525b;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #52525b;
+    text-transform: uppercase; letter-spacing: 1px;
   }
-
   .controls { display: flex; gap: 15px; margin-bottom: 15px; }
   .control-group { flex: 1; }
   label { display: block; font-size: 10px; color: #71717a; margin-bottom: 6px; font-family: 'JetBrains Mono', monospace; }
-  
   select {
     width: 100%; padding: 10px; background: #09090b; color: #38bdf8;
     border: 1px solid #27272a; border-radius: 6px;
     font-family: 'JetBrains Mono', monospace; font-size: 12px; outline: none;
   }
-  
-  input[type="range"] {
-    width: 100%; -webkit-appearance: none; background: transparent; margin-top: 8px;
-  }
+  input[type="range"] { width: 100%; -webkit-appearance: none; background: transparent; margin-top: 8px; }
   input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: #27272a; border-radius: 2px; }
   input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%;
     background: #e2e8f0; margin-top: -6px; cursor: pointer; box-shadow: 0 0 5px rgba(255,255,255,0.3);
   }
-
   .screen {
     width: 100%; height: 140px; background: #000; border-radius: 6px;
     border: 1px solid #27272a; position: relative; overflow: hidden;
     box-shadow: inset 0 0 20px rgba(0,0,0,0.9);
   }
   .screen-label { position: absolute; top: 8px; left: 10px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #3f3f46; z-index: 10; }
-
   .action-btn {
     width: 100%; padding: 14px; font-size: 12px; font-weight: 800; text-transform: uppercase;
     letter-spacing: 1px; border: none; border-radius: 6px; cursor: pointer; transition: 0.2s;
@@ -152,60 +77,43 @@
   #btn-play.playing { background: #ef4444; color: #fff; box-shadow: 0 0 20px rgba(239,68,68,0.4); }
   #btn-mic { background: #6366f1; color: #fff; }
   #btn-mic.active { background: #ef4444; }
-  
-  /* noise cancel specific */
-  #btn-cancel { background: #a855f7; color: #fff; }
-  #btn-cancel.active { background: #ef4444; box-shadow: 0 0 20px rgba(239,68,68,0.5); }
-  .status-badge {
-    display: inline-block;
-    padding: 2px 10px;
-    border-radius: 12px;
-    font-size: 9px;
-    font-weight: 700;
-    background: #27272a;
-    color: #a1a1aa;
-  }
+  #btn-glitch { background: #f59e0b; color: #000; margin-top: 8px; }
+  #btn-arp { background: #f472b6; color: #000; }
+  #btn-arp.active { background: #ef4444; color:#fff; }
 
   .piano-scroll {
-    overflow-x: auto; overflow-y: hidden; background: #09090b; 
+    overflow-x: auto; overflow-y: hidden; background: #09090b;
     padding: 10px; border-radius: 8px; border: 1px solid #27272a;
     white-space: nowrap; box-shadow: inset 0 10px 20px rgba(0,0,0,0.8);
   }
-  
   .piano { display: inline-flex; position: relative; height: 160px; }
-  
-  .key { 
-    border-radius: 0 0 4px 4px; cursor: pointer; display: flex; 
-    align-items: flex-end; justify-content: center; padding-bottom: 6px; 
-    font-size: 9px; font-family: 'JetBrains Mono', monospace; 
+  .key {
+    border-radius: 0 0 4px 4px; cursor: pointer; display: flex;
+    align-items: flex-end; justify-content: center; padding-bottom: 6px;
+    font-size: 9px; font-family: 'JetBrains Mono', monospace;
     transition: transform 0.05s, background 0.05s;
   }
-  
-  .key.white { 
-    width: 38px; height: 100%; background: linear-gradient(to bottom, #e4e4e7, #ffffff); 
-    border: 1px solid #a1a1aa; border-top: none; color: #52525b; z-index: 1; 
+  .key.white {
+    width: 38px; height: 100%; background: linear-gradient(to bottom, #e4e4e7, #ffffff);
+    border: 1px solid #a1a1aa; border-top: none; color: #52525b; z-index: 1;
     box-shadow: inset 0 -5px 10px rgba(0,0,0,0.1);
   }
-  .key.white.active { 
-    background: #38bdf8; color: #fff; 
-    box-shadow: inset 0 -5px 15px rgba(0,0,0,0.3); 
+  .key.white.active {
+    background: #38bdf8; color: #fff;
+    box-shadow: inset 0 -5px 15px rgba(0,0,0,0.3);
     transform: scaleY(0.98); transform-origin: top;
   }
-  
-  .key.black { 
-    width: 26px; height: 60%; background: linear-gradient(to bottom, #18181b, #3f3f46); 
-    border: 1px solid #000; color: #a1a1aa; position: absolute; z-index: 2; 
+  .key.black {
+    width: 26px; height: 60%; background: linear-gradient(to bottom, #18181b, #3f3f46);
+    border: 1px solid #000; color: #a1a1aa; position: absolute; z-index: 2;
     margin-left: -13px; box-shadow: 0 4px 6px rgba(0,0,0,0.6);
   }
-  .key.black.active { 
-    background: #0284c7; color: #fff; 
+  .key.black.active {
+    background: #0284c7; color: #fff;
     transform: scaleY(0.95); transform-origin: top;
     box-shadow: 0 2px 3px rgba(0,0,0,0.6);
   }
-
-  @media (max-width: 600px) {
-    .controls { flex-direction: column; gap: 10px; }
-  }
+  @media (max-width: 600px) { .controls { flex-direction: column; gap: 10px; } }
 </style>
 </head>
 <body>
@@ -213,15 +121,15 @@
   <header>
     <div class="logo">STUDIO PRO</div>
     <div class="nav-tabs">
-      <button class="nav-btn active" onclick="switchTab('synth')">Synth</button>
-      <button class="nav-btn" onclick="switchTab('mic')">Mic</button>
-      <button class="nav-btn" onclick="switchTab('piano')">Piano</button>
+      <button class="nav-btn active" onclick="switchTab('synth', event)">Synth</button>
+      <button class="nav-btn" onclick="switchTab('mic', event)">Mic</button>
+      <button class="nav-btn" onclick="switchTab('piano', event)">Piano</button>
     </div>
   </header>
 
   <div class="workspace">
-    
-    <!-- SYNTH PANEL (with Noise Cancel section added) -->
+
+    <!-- SYNTH PANEL -->
     <div class="panel active" id="panel-synth">
       <div class="module">
         <div class="module-header">
@@ -244,7 +152,7 @@
           </div>
         </div>
       </div>
-      
+
       <div class="module">
         <div class="module-header">Signal Output</div>
         <div class="screen">
@@ -253,24 +161,6 @@
         </div>
         <button class="action-btn" id="btn-play" style="margin-top:12px;">Initialize Signal</button>
       </div>
-
-      <!-- NOISE CANCEL MODULE (ACTIVE CANCELLATION) -->
-      <div class="module" style="border-color:#a855f7;">
-        <div class="module-header">
-          <span>⚡ ACTIVE NOISE CANCELLATION</span>
-          <span class="status-badge" id="cancel-status">STANDBY</span>
-        </div>
-        <p style="font-size:11px; color:#94a3b8; margin:0 0 12px 0; font-family:'JetBrains Mono',monospace;">
-          Generates inverted phase wave to cancel the synth tone.
-        </p>
-        <button class="action-btn" id="btn-cancel">🎛️ ENGAGE CANCELLATION</button>
-        <div style="margin-top:12px; display:flex; gap:10px; align-items:center;">
-          <label style="flex:1; font-size:10px;">Inversion strength</label>
-          <input type="range" id="cancel-strength" min="0" max="100" value="100" style="flex:2;">
-          <span id="cancel-strength-val" style="font-family:'JetBrains Mono'; font-size:11px; color:#a855f7;">100%</span>
-        </div>
-      </div>
-
     </div>
 
     <!-- MIC PANEL -->
@@ -282,6 +172,10 @@
           <canvas id="mic-canvas"></canvas>
         </div>
         <button class="action-btn" id="btn-mic" style="margin-top:12px;">Start Input</button>
+        <button class="action-btn" id="btn-glitch" style="margin-top:8px;">🔥 CHAOS FX (Pitch Wobble)</button>
+        <p style="font-size:10px; color:#64748b; margin:10px 0 0 0; font-family:'JetBrains Mono', monospace;">
+          When mic is live, your voice ducks the synth. Chaos adds a pitch-dive.
+        </p>
       </div>
     </div>
 
@@ -306,7 +200,7 @@
             <input type="range" id="piano-vol" min="0" max="100" value="50">
           </div>
         </div>
-        
+
         <div class="screen" style="height: 90px; margin-bottom: 12px;">
           <div class="screen-label">AUDIO OUTPUT</div>
           <canvas id="piano-canvas"></canvas>
@@ -315,6 +209,8 @@
         <div class="piano-scroll">
           <div class="piano" id="piano-keys"></div>
         </div>
+
+        <button class="action-btn" id="btn-arp" style="margin-top:12px;">🎲 AUTO-ARP (Random Jam)</button>
       </div>
     </div>
 
@@ -327,193 +223,77 @@
   masterGain.gain.value = 0.5;
   masterGain.connect(audioCtx.destination);
 
-  function switchTab(tabId) {
+  // Extra gain for synth — lets mic duck it
+  const synthGain = audioCtx.createGain();
+  synthGain.gain.value = 1;
+  synthGain.connect(masterGain);
+
+  function switchTab(tabId, ev) {
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     document.getElementById(`panel-${tabId}`).classList.add('active');
-    event.target.classList.add('active');
+    if (ev) ev.target.classList.add('active');
   }
 
-  // --- 1. SYNTH + ACTIVE NOISE CANCELLATION ---
+  // ============ 1. SYNTH ============
   const btnPlay = document.getElementById('btn-play');
   const synthWave = document.getElementById('synth-wave');
   const synthFreq = document.getElementById('synth-freq');
   const synthFreqVal = document.getElementById('synth-freq-val');
   const synthCanvas = document.getElementById('synth-canvas');
   const synthCtx = synthCanvas.getContext('2d');
-  
-  // Noise cancellation elements
-  const btnCancel = document.getElementById('btn-cancel');
-  const cancelStatus = document.getElementById('cancel-status');
-  const cancelStrength = document.getElementById('cancel-strength');
-  const cancelStrengthVal = document.getElementById('cancel-strength-val');
-  
+
   let synthOsc = null;
   let synthAnalyser = null;
   let synthData = null;
   let isSynthPlaying = false;
   let synthAnimId = null;
-  
-  // Cancellation nodes
-  let cancelOsc = null;
-  let cancelGain = null;
-  let cancelAnalyser = null;
-  let cancelData = null;
-  let isCancelling = false;
-  let cancelAnimId = null;
-  
-  // UI updates for cancellation strength
-  cancelStrength.oninput = () => {
-    const val = cancelStrength.value;
-    cancelStrengthVal.textContent = val + '%';
-    if (cancelGain) {
-      // Invert phase & scale amplitude: inverted wave amplitude = -1 * strength
-      // We use gain node with negative gain for inversion
-      cancelGain.gain.setValueAtTime(-val / 100, audioCtx.currentTime);
-    }
-  };
-  
-  // Sync cancel frequency with synth freq when synth changes
+
   synthFreq.oninput = () => {
     synthFreqVal.textContent = synthFreq.value + " Hz";
     if (synthOsc) synthOsc.frequency.setValueAtTime(synthFreq.value, audioCtx.currentTime);
-    if (cancelOsc && isCancelling) {
-      cancelOsc.frequency.setValueAtTime(synthFreq.value, audioCtx.currentTime);
-    }
   };
-  
-  // Sync cancel waveform with synth waveform
-  synthWave.onchange = () => {
-    if (synthOsc) synthOsc.type = synthWave.value;
-    if (cancelOsc) cancelOsc.type = synthWave.value;
-  };
-  
-  // Master play/stop
+  synthWave.onchange = () => { if (synthOsc) synthOsc.type = synthWave.value; };
+
   btnPlay.onclick = () => {
     if (isSynthPlaying) {
-      // stop synth
-      if (synthOsc) {
-        synthOsc.stop(); synthOsc.disconnect(); synthOsc = null;
-      }
-      if (synthAnalyser) synthAnalyser.disconnect();
-      isSynthPlaying = false;
+      synthOsc.stop(); synthOsc.disconnect(); synthAnalyser.disconnect();
+      synthOsc = null; isSynthPlaying = false;
       btnPlay.textContent = "Initialize Signal"; btnPlay.classList.remove('playing');
       cancelAnimationFrame(synthAnimId);
       synthCtx.clearRect(0, 0, synthCanvas.width, synthCanvas.height);
-      
-      // stop cancellation if active
-      if (isCancelling) {
-        stopCancellation();
-      }
     } else {
-      // start synth
       synthOsc = audioCtx.createOscillator();
       synthOsc.type = synthWave.value;
       synthOsc.frequency.setValueAtTime(synthFreq.value, audioCtx.currentTime);
-      
+
       synthAnalyser = audioCtx.createAnalyser();
       synthAnalyser.fftSize = 2048;
       synthOsc.connect(synthAnalyser);
-      synthAnalyser.connect(masterGain);
+      synthAnalyser.connect(synthGain);
       synthOsc.start();
-      
+
       synthData = new Uint8Array(synthAnalyser.frequencyBinCount);
       isSynthPlaying = true;
       btnPlay.textContent = "Terminate Signal"; btnPlay.classList.add('playing');
       drawSynth();
-      
-      // if cancellation was active, restart it to match new signal
-      if (isCancelling) {
-        stopCancellation();
-        startCancellation();
-      }
     }
   };
-  
-  // --- CANCELLATION FUNCTIONS ---
-  function startCancellation() {
-    if (!synthOsc || !isSynthPlaying) {
-      // Can't cancel without a source signal
-      cancelStatus.textContent = 'NO SIGNAL';
-      return;
-    }
-    if (isCancelling) return; // already running
-    
-    // Create inverted phase oscillator
-    cancelOsc = audioCtx.createOscillator();
-    cancelOsc.type = synthWave.value;
-    cancelOsc.frequency.setValueAtTime(synthFreq.value, audioCtx.currentTime);
-    
-    // Gain node for inversion & strength (negative gain = phase inversion)
-    cancelGain = audioCtx.createGain();
-    const strength = parseFloat(cancelStrength.value) / 100;
-    cancelGain.gain.value = -strength; // inverted phase
-    
-    // analyser for visual feedback
-    cancelAnalyser = audioCtx.createAnalyser();
-    cancelAnalyser.fftSize = 2048;
-    
-    // connect: cancelOsc -> cancelGain -> cancelAnalyser -> masterGain
-    cancelOsc.connect(cancelGain);
-    cancelGain.connect(cancelAnalyser);
-    cancelAnalyser.connect(masterGain);
-    
-    cancelOsc.start();
-    
-    cancelData = new Uint8Array(cancelAnalyser.frequencyBinCount);
-    isCancelling = true;
-    
-    // UI updates
-    btnCancel.textContent = "⏹️ DISENGAGE CANCELLATION";
-    btnCancel.classList.add('active');
-    cancelStatus.textContent = 'CANCELLING';
-    cancelStatus.style.background = '#7e22ce';
-    cancelStatus.style.color = '#e9d5ff';
-    
-    drawCancellation();
-  }
-  
-  function stopCancellation() {
-    if (!isCancelling) return;
-    
-    if (cancelOsc) {
-      cancelOsc.stop(); cancelOsc.disconnect(); cancelOsc = null;
-    }
-    if (cancelGain) cancelGain.disconnect();
-    if (cancelAnalyser) cancelAnalyser.disconnect();
-    
-    cancelAnimationFrame(cancelAnimId);
-    isCancelling = false;
-    
-    // UI updates
-    btnCancel.textContent = "🎛️ ENGAGE CANCELLATION";
-    btnCancel.classList.remove('active');
-    cancelStatus.textContent = 'STANDBY';
-    cancelStatus.style.background = '#27272a';
-    cancelStatus.style.color = '#a1a1aa';
-    
-    // clear canvas (reuse synth canvas? we'll use the same canvas for overlays, but we'll draw cancel wave on top)
-    // we'll just redraw the synth wave after a moment
-    if (isSynthPlaying) {
-      // re-draw synth only
-    }
-  }
-  
-  // Draw cancellation wave on the same synth canvas? We'll overlay it.
-  // Modify drawSynth to also draw cancel wave if cancelling.
+
   function drawSynth() {
     if (!isSynthPlaying) return;
     synthAnimId = requestAnimationFrame(drawSynth);
-    
     const w = synthCanvas.width = synthCanvas.clientWidth;
     const h = synthCanvas.height = synthCanvas.clientHeight;
-    
-    // Clear
-    synthCtx.fillStyle = '#000'; synthCtx.fillRect(0, 0, w, h);
-    
-    // Draw main synth wave (blue)
     synthAnalyser.getByteTimeDomainData(synthData);
-    synthCtx.lineWidth = 2; synthCtx.strokeStyle = '#38bdf8'; synthCtx.beginPath();
+
+    synthCtx.fillStyle = '#000'; synthCtx.fillRect(0, 0, w, h);
+    synthCtx.lineWidth = 2;
+    // Color shifts with volume ducking (mic-triggered)
+    const duck = synthGain.gain.value;
+    synthCtx.strokeStyle = duck < 0.9 ? '#f472b6' : '#38bdf8';
+    synthCtx.beginPath();
+
     const slice = w / synthData.length;
     for (let i = 0; i < synthData.length; i++) {
       const y = (synthData[i] / 128.0) * (h / 2) * 1.1;
@@ -521,79 +301,35 @@
       else synthCtx.lineTo(i * slice, y);
     }
     synthCtx.stroke();
-    
-    // Overlay cancellation wave (purple, dashed) if active
-    if (isCancelling && cancelAnalyser) {
-      cancelAnalyser.getByteTimeDomainData(cancelData);
-      synthCtx.beginPath();
-      synthCtx.strokeStyle = '#a855f7';
-      synthCtx.lineWidth = 1.5;
-      synthCtx.setLineDash([4, 4]);
-      
-      for (let i = 0; i < cancelData.length; i++) {
-        const y = (cancelData[i] / 128.0) * (h / 2) * 1.1;
-        if (i === 0) synthCtx.moveTo(0, y);
-        else synthCtx.lineTo(i * slice, y);
-      }
-      synthCtx.stroke();
-      synthCtx.setLineDash([]); // reset
-    }
   }
-  
-  // Separate draw for cancellation? We already handle it inside drawSynth via overlay.
-  // But we need to update the overlay. We'll just set a flag and drawSynth will include it.
-  // We'll also add a separate animation loop for cancellation if synth is not playing? 
-  // Not needed because we overlay inside drawSynth.
-  
-  // However, if synth is playing but cancellation is toggled, drawSynth already includes cancel overlay.
-  // The cancel button should start/stop cancellation nodes.
-  
-  btnCancel.onclick = () => {
-    if (!isSynthPlaying) {
-      cancelStatus.textContent = 'NO SIGNAL';
-      cancelStatus.style.background = '#7f1d1d';
-      cancelStatus.style.color = '#fecaca';
-      setTimeout(() => {
-        if (!isCancelling) {
-          cancelStatus.textContent = 'STANDBY';
-          cancelStatus.style.background = '#27272a';
-          cancelStatus.style.color = '#a1a1aa';
-        }
-      }, 1500);
-      return;
-    }
-    
-    if (isCancelling) {
-      stopCancellation();
-    } else {
-      startCancellation();
-    }
-  };
-  
-  // Ensure cancellation stops when synth stops (handled in btnPlay)
-  
-  // --- 2. MIC ---
+
+  // ============ 2. MIC + DUCKING + CHAOS ============
   const btnMic = document.getElementById('btn-mic');
+  const btnGlitch = document.getElementById('btn-glitch');
   const micCanvas = document.getElementById('mic-canvas');
   const micCtx = micCanvas.getContext('2d');
-  
+
   let micAnalyser = null;
   let micData = null;
+  let micSource = null;
   let isMicOn = false;
   let micAnimId = null;
+  let rmsSmooth = 0;
 
   btnMic.onclick = async () => {
     if (isMicOn) {
       isMicOn = false; btnMic.textContent = "Start Input"; btnMic.classList.remove('active');
       cancelAnimationFrame(micAnimId);
       micCtx.clearRect(0, 0, micCanvas.width, micCanvas.height);
+      if (micSource) { micSource.disconnect(); micSource = null; }
+      synthGain.gain.setTargetAtTime(1, audioCtx.currentTime, 0.05);
       return;
     }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const source = audioCtx.createMediaStreamSource(stream);
+      micSource = audioCtx.createMediaStreamSource(stream);
       micAnalyser = audioCtx.createAnalyser(); micAnalyser.fftSize = 2048;
-      source.connect(micAnalyser);
+      micSource.connect(micAnalyser);
       micData = new Uint8Array(micAnalyser.frequencyBinCount);
       isMicOn = true; btnMic.textContent = "Stop Input"; btnMic.classList.add('active');
       drawMic();
@@ -606,36 +342,74 @@
     const w = micCanvas.width = micCanvas.clientWidth;
     const h = micCanvas.height = micCanvas.clientHeight;
     micAnalyser.getByteTimeDomainData(micData);
-    
+
+    // RMS calc for ducking
+    let sum = 0;
+    for (let i = 0; i < micData.length; i++) {
+      const v = (micData[i] - 128) / 128;
+      sum += v * v;
+    }
+    const rms = Math.sqrt(sum / micData.length);
+    rmsSmooth = rmsSmooth * 0.85 + rms * 0.15;
+
+    // Duck synth when loud voice detected
+    if (isSynthPlaying) {
+      const target = Math.max(0.05, 1 - rmsSmooth * 4);
+      synthGain.gain.setTargetAtTime(target, audioCtx.currentTime, 0.05);
+    }
+
+    // Draw waveform
     micCtx.fillStyle = '#000'; micCtx.fillRect(0, 0, w, h);
-    micCtx.lineWidth = 2; micCtx.strokeStyle = '#22c55e'; micCtx.beginPath();
-    
+    micCtx.lineWidth = 2;
+    micCtx.strokeStyle = rmsSmooth > 0.15 ? '#f472b6' : '#22c55e';
+    micCtx.beginPath();
+
     const slice = w / micData.length;
     for (let i = 0; i < micData.length; i++) {
-      const y = (micData[i] / 128.0) * (h / 2) * 1.2; 
+      const y = (micData[i] / 128.0) * (h / 2) * 1.2;
       if (i === 0) micCtx.moveTo(0, y);
       else micCtx.lineTo(i * slice, y);
     }
     micCtx.stroke();
   }
 
-  // --- 3. PIANO ---
+  // CHAOS: pitch-dive the synth briefly
+  btnGlitch.onclick = () => {
+    if (!synthOsc) {
+      btnGlitch.textContent = "🎯 NEED SYNTH FIRST";
+      setTimeout(() => btnGlitch.textContent = "🔥 CHAOS FX (Pitch Wobble)", 1200);
+      return;
+    }
+    const t = audioCtx.currentTime;
+    const baseFreq = parseFloat(synthFreq.value);
+    synthOsc.frequency.cancelScheduledValues(t);
+    synthOsc.frequency.setValueAtTime(baseFreq, t);
+    synthOsc.frequency.exponentialRampToValueAtTime(baseFreq * 0.2, t + 0.15);
+    synthOsc.frequency.exponentialRampToValueAtTime(baseFreq * 2.5, t + 0.35);
+    synthOsc.frequency.exponentialRampToValueAtTime(baseFreq, t + 0.6);
+  };
+
+  // ============ 3. PIANO + AUTO-ARP ============
   const pianoWave = document.getElementById('piano-wave');
   const pianoVol = document.getElementById('piano-vol');
   const pianoContainer = document.getElementById('piano-keys');
   const pianoCanvas = document.getElementById('piano-canvas');
   const pianoCtx = pianoCanvas.getContext('2d');
+  const btnArp = document.getElementById('btn-arp');
 
   let pianoOsc = null;
   let pianoAnalyser = null;
   let pianoData = null;
   let pianoAnimId = null;
   let isPianoPlaying = false;
+  let arpTimer = null;
+  let isArp = false;
 
   pianoVol.oninput = () => { masterGain.gain.value = pianoVol.value / 100; };
 
   const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-  
+  const allKeys = [];
+
   for (let octave = 3; octave <= 5; octave++) {
     for (let i = 0; i < 12; i++) {
       const noteName = notes[i];
@@ -646,7 +420,7 @@
       const key = document.createElement('div');
       key.className = `key ${isSharp ? 'black' : 'white'}`;
       key.textContent = noteName + octave;
-      
+
       if (isSharp) {
         const whiteKeyIndex = (octave - 3) * 7 + Math.ceil(i / 2);
         key.style.left = `${whiteKeyIndex * 38}px`;
@@ -657,11 +431,11 @@
         key.classList.add('active');
         playPianoNote(freq, pianoWave.value);
       });
-      
       key.addEventListener('pointerup', () => { key.classList.remove('active'); stopPianoNote(); });
       key.addEventListener('pointerleave', () => { key.classList.remove('active'); stopPianoNote(); });
 
       pianoContainer.appendChild(key);
+      allKeys.push({ el: key, freq });
     }
   }
 
@@ -670,13 +444,13 @@
     pianoOsc = audioCtx.createOscillator();
     pianoOsc.type = waveType;
     pianoOsc.frequency.value = freq;
-    
+
     pianoAnalyser = audioCtx.createAnalyser();
     pianoAnalyser.fftSize = 2048;
     pianoOsc.connect(pianoAnalyser);
     pianoAnalyser.connect(masterGain);
     pianoOsc.start();
-    
+
     pianoData = new Uint8Array(pianoAnalyser.frequencyBinCount);
     isPianoPlaying = true;
     drawPiano();
@@ -696,11 +470,11 @@
     pianoAnimId = requestAnimationFrame(drawPiano);
     const w = pianoCanvas.width = pianoCanvas.clientWidth;
     const h = pianoCanvas.height = pianoCanvas.clientHeight;
-    
+
     pianoAnalyser.getByteTimeDomainData(pianoData);
     pianoCtx.fillStyle = '#000'; pianoCtx.fillRect(0, 0, w, h);
     pianoCtx.lineWidth = 2; pianoCtx.strokeStyle = '#facc15'; pianoCtx.beginPath();
-    
+
     const slice = w / pianoData.length;
     for (let i = 0; i < pianoData.length; i++) {
       const y = (pianoData[i] / 128.0) * (h / 2) * 1.1;
@@ -710,14 +484,32 @@
     pianoCtx.stroke();
   }
 
-  // resume audio context on first user gesture
+  // ---- AUTO-ARP: random note every 260ms ----
+  btnArp.onclick = () => {
+    isArp = !isArp;
+    if (isArp) {
+      btnArp.textContent = "⏹️ STOP JAM";
+      btnArp.classList.add('active');
+      arpTimer = setInterval(() => {
+        // Bias towards white keys for musicality
+        const pool = allKeys.filter(k => k.el.classList.contains('white'));
+        const pick = pool[Math.floor(Math.random() * pool.length)];
+        playPianoNote(pick.freq, pianoWave.value);
+        pick.el.classList.add('active');
+        setTimeout(() => pick.el.classList.remove('active'), 180);
+      }, 260);
+    } else {
+      btnArp.textContent = "🎲 AUTO-ARP (Random Jam)";
+      btnArp.classList.remove('active');
+      clearInterval(arpTimer);
+      stopPianoNote();
+    }
+  };
+
+  // Resume audio on first gesture
   document.body.addEventListener('pointerdown', () => {
     if (audioCtx.state === 'suspended') audioCtx.resume();
   }, { once: true });
-
-  // initialize cancel status styling
-  cancelStatus.style.background = '#27272a';
-  cancelStatus.style.color = '#a1a1aa';
 </script>
 </body>
 </html>
