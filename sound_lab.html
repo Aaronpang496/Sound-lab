@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Studio Pro Max</title>
+<title>Studio Pro Max · Active Noise Cancel</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap');
 
@@ -20,11 +20,9 @@
     overflow: hidden;
   }
 
-  /* --- FIXED HEADER --- */
   header {
     background: #121216;
     border-bottom: 1px solid #222;
-    /* Added padding-top to push it down from the screen edge/notch */
     padding: max(20px, env(safe-area-inset-top)) 15px 15px 15px; 
     display: flex;
     flex-direction: column;
@@ -53,7 +51,6 @@
     box-shadow: 0 0 10px #38bdf8;
   }
   
-  /* Centered Nav Tabs */
   .nav-tabs { 
     display: flex; 
     gap: 6px; 
@@ -85,7 +82,6 @@
     box-shadow: 0 0 10px rgba(56, 189, 248, 0.1);
   }
 
-  /* --- WORKSPACE --- */
   .workspace {
     flex: 1;
     padding: 15px;
@@ -102,7 +98,6 @@
   }
   .panel.active { display: flex; }
 
-  /* --- MODULES --- */
   .module {
     background: #141419;
     border: 1px solid #27272a;
@@ -157,6 +152,19 @@
   #btn-play.playing { background: #ef4444; color: #fff; box-shadow: 0 0 20px rgba(239,68,68,0.4); }
   #btn-mic { background: #6366f1; color: #fff; }
   #btn-mic.active { background: #ef4444; }
+  
+  /* noise cancel specific */
+  #btn-cancel { background: #a855f7; color: #fff; }
+  #btn-cancel.active { background: #ef4444; box-shadow: 0 0 20px rgba(239,68,68,0.5); }
+  .status-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 9px;
+    font-weight: 700;
+    background: #27272a;
+    color: #a1a1aa;
+  }
 
   .piano-scroll {
     overflow-x: auto; overflow-y: hidden; background: #09090b; 
@@ -213,7 +221,7 @@
 
   <div class="workspace">
     
-    <!-- SYNTH PANEL -->
+    <!-- SYNTH PANEL (with Noise Cancel section added) -->
     <div class="panel active" id="panel-synth">
       <div class="module">
         <div class="module-header">
@@ -245,6 +253,24 @@
         </div>
         <button class="action-btn" id="btn-play" style="margin-top:12px;">Initialize Signal</button>
       </div>
+
+      <!-- NOISE CANCEL MODULE (ACTIVE CANCELLATION) -->
+      <div class="module" style="border-color:#a855f7;">
+        <div class="module-header">
+          <span>⚡ ACTIVE NOISE CANCELLATION</span>
+          <span class="status-badge" id="cancel-status">STANDBY</span>
+        </div>
+        <p style="font-size:11px; color:#94a3b8; margin:0 0 12px 0; font-family:'JetBrains Mono',monospace;">
+          Generates inverted phase wave to cancel the synth tone.
+        </p>
+        <button class="action-btn" id="btn-cancel">🎛️ ENGAGE CANCELLATION</button>
+        <div style="margin-top:12px; display:flex; gap:10px; align-items:center;">
+          <label style="flex:1; font-size:10px;">Inversion strength</label>
+          <input type="range" id="cancel-strength" min="0" max="100" value="100" style="flex:2;">
+          <span id="cancel-strength-val" style="font-family:'JetBrains Mono'; font-size:11px; color:#a855f7;">100%</span>
+        </div>
+      </div>
+
     </div>
 
     <!-- MIC PANEL -->
@@ -308,7 +334,7 @@
     event.target.classList.add('active');
   }
 
-  // --- 1. SYNTH ---
+  // --- 1. SYNTH + ACTIVE NOISE CANCELLATION ---
   const btnPlay = document.getElementById('btn-play');
   const synthWave = document.getElementById('synth-wave');
   const synthFreq = document.getElementById('synth-freq');
@@ -316,25 +342,71 @@
   const synthCanvas = document.getElementById('synth-canvas');
   const synthCtx = synthCanvas.getContext('2d');
   
+  // Noise cancellation elements
+  const btnCancel = document.getElementById('btn-cancel');
+  const cancelStatus = document.getElementById('cancel-status');
+  const cancelStrength = document.getElementById('cancel-strength');
+  const cancelStrengthVal = document.getElementById('cancel-strength-val');
+  
   let synthOsc = null;
   let synthAnalyser = null;
   let synthData = null;
   let isSynthPlaying = false;
   let synthAnimId = null;
-
+  
+  // Cancellation nodes
+  let cancelOsc = null;
+  let cancelGain = null;
+  let cancelAnalyser = null;
+  let cancelData = null;
+  let isCancelling = false;
+  let cancelAnimId = null;
+  
+  // UI updates for cancellation strength
+  cancelStrength.oninput = () => {
+    const val = cancelStrength.value;
+    cancelStrengthVal.textContent = val + '%';
+    if (cancelGain) {
+      // Invert phase & scale amplitude: inverted wave amplitude = -1 * strength
+      // We use gain node with negative gain for inversion
+      cancelGain.gain.setValueAtTime(-val / 100, audioCtx.currentTime);
+    }
+  };
+  
+  // Sync cancel frequency with synth freq when synth changes
   synthFreq.oninput = () => {
     synthFreqVal.textContent = synthFreq.value + " Hz";
     if (synthOsc) synthOsc.frequency.setValueAtTime(synthFreq.value, audioCtx.currentTime);
+    if (cancelOsc && isCancelling) {
+      cancelOsc.frequency.setValueAtTime(synthFreq.value, audioCtx.currentTime);
+    }
   };
-
+  
+  // Sync cancel waveform with synth waveform
+  synthWave.onchange = () => {
+    if (synthOsc) synthOsc.type = synthWave.value;
+    if (cancelOsc) cancelOsc.type = synthWave.value;
+  };
+  
+  // Master play/stop
   btnPlay.onclick = () => {
     if (isSynthPlaying) {
-      synthOsc.stop(); synthOsc.disconnect(); synthAnalyser.disconnect();
-      synthOsc = null; isSynthPlaying = false;
+      // stop synth
+      if (synthOsc) {
+        synthOsc.stop(); synthOsc.disconnect(); synthOsc = null;
+      }
+      if (synthAnalyser) synthAnalyser.disconnect();
+      isSynthPlaying = false;
       btnPlay.textContent = "Initialize Signal"; btnPlay.classList.remove('playing');
       cancelAnimationFrame(synthAnimId);
       synthCtx.clearRect(0, 0, synthCanvas.width, synthCanvas.height);
+      
+      // stop cancellation if active
+      if (isCancelling) {
+        stopCancellation();
+      }
     } else {
+      // start synth
       synthOsc = audioCtx.createOscillator();
       synthOsc.type = synthWave.value;
       synthOsc.frequency.setValueAtTime(synthFreq.value, audioCtx.currentTime);
@@ -349,28 +421,157 @@
       isSynthPlaying = true;
       btnPlay.textContent = "Terminate Signal"; btnPlay.classList.add('playing');
       drawSynth();
+      
+      // if cancellation was active, restart it to match new signal
+      if (isCancelling) {
+        stopCancellation();
+        startCancellation();
+      }
     }
   };
-
+  
+  // --- CANCELLATION FUNCTIONS ---
+  function startCancellation() {
+    if (!synthOsc || !isSynthPlaying) {
+      // Can't cancel without a source signal
+      cancelStatus.textContent = 'NO SIGNAL';
+      return;
+    }
+    if (isCancelling) return; // already running
+    
+    // Create inverted phase oscillator
+    cancelOsc = audioCtx.createOscillator();
+    cancelOsc.type = synthWave.value;
+    cancelOsc.frequency.setValueAtTime(synthFreq.value, audioCtx.currentTime);
+    
+    // Gain node for inversion & strength (negative gain = phase inversion)
+    cancelGain = audioCtx.createGain();
+    const strength = parseFloat(cancelStrength.value) / 100;
+    cancelGain.gain.value = -strength; // inverted phase
+    
+    // analyser for visual feedback
+    cancelAnalyser = audioCtx.createAnalyser();
+    cancelAnalyser.fftSize = 2048;
+    
+    // connect: cancelOsc -> cancelGain -> cancelAnalyser -> masterGain
+    cancelOsc.connect(cancelGain);
+    cancelGain.connect(cancelAnalyser);
+    cancelAnalyser.connect(masterGain);
+    
+    cancelOsc.start();
+    
+    cancelData = new Uint8Array(cancelAnalyser.frequencyBinCount);
+    isCancelling = true;
+    
+    // UI updates
+    btnCancel.textContent = "⏹️ DISENGAGE CANCELLATION";
+    btnCancel.classList.add('active');
+    cancelStatus.textContent = 'CANCELLING';
+    cancelStatus.style.background = '#7e22ce';
+    cancelStatus.style.color = '#e9d5ff';
+    
+    drawCancellation();
+  }
+  
+  function stopCancellation() {
+    if (!isCancelling) return;
+    
+    if (cancelOsc) {
+      cancelOsc.stop(); cancelOsc.disconnect(); cancelOsc = null;
+    }
+    if (cancelGain) cancelGain.disconnect();
+    if (cancelAnalyser) cancelAnalyser.disconnect();
+    
+    cancelAnimationFrame(cancelAnimId);
+    isCancelling = false;
+    
+    // UI updates
+    btnCancel.textContent = "🎛️ ENGAGE CANCELLATION";
+    btnCancel.classList.remove('active');
+    cancelStatus.textContent = 'STANDBY';
+    cancelStatus.style.background = '#27272a';
+    cancelStatus.style.color = '#a1a1aa';
+    
+    // clear canvas (reuse synth canvas? we'll use the same canvas for overlays, but we'll draw cancel wave on top)
+    // we'll just redraw the synth wave after a moment
+    if (isSynthPlaying) {
+      // re-draw synth only
+    }
+  }
+  
+  // Draw cancellation wave on the same synth canvas? We'll overlay it.
+  // Modify drawSynth to also draw cancel wave if cancelling.
   function drawSynth() {
     if (!isSynthPlaying) return;
     synthAnimId = requestAnimationFrame(drawSynth);
+    
     const w = synthCanvas.width = synthCanvas.clientWidth;
     const h = synthCanvas.height = synthCanvas.clientHeight;
-    synthAnalyser.getByteTimeDomainData(synthData);
     
+    // Clear
     synthCtx.fillStyle = '#000'; synthCtx.fillRect(0, 0, w, h);
-    synthCtx.lineWidth = 2; synthCtx.strokeStyle = '#38bdf8'; synthCtx.beginPath();
     
+    // Draw main synth wave (blue)
+    synthAnalyser.getByteTimeDomainData(synthData);
+    synthCtx.lineWidth = 2; synthCtx.strokeStyle = '#38bdf8'; synthCtx.beginPath();
     const slice = w / synthData.length;
     for (let i = 0; i < synthData.length; i++) {
-      const y = (synthData[i] / 128.0) * (h / 2) * 1.1; 
+      const y = (synthData[i] / 128.0) * (h / 2) * 1.1;
       if (i === 0) synthCtx.moveTo(0, y);
       else synthCtx.lineTo(i * slice, y);
     }
     synthCtx.stroke();
+    
+    // Overlay cancellation wave (purple, dashed) if active
+    if (isCancelling && cancelAnalyser) {
+      cancelAnalyser.getByteTimeDomainData(cancelData);
+      synthCtx.beginPath();
+      synthCtx.strokeStyle = '#a855f7';
+      synthCtx.lineWidth = 1.5;
+      synthCtx.setLineDash([4, 4]);
+      
+      for (let i = 0; i < cancelData.length; i++) {
+        const y = (cancelData[i] / 128.0) * (h / 2) * 1.1;
+        if (i === 0) synthCtx.moveTo(0, y);
+        else synthCtx.lineTo(i * slice, y);
+      }
+      synthCtx.stroke();
+      synthCtx.setLineDash([]); // reset
+    }
   }
-
+  
+  // Separate draw for cancellation? We already handle it inside drawSynth via overlay.
+  // But we need to update the overlay. We'll just set a flag and drawSynth will include it.
+  // We'll also add a separate animation loop for cancellation if synth is not playing? 
+  // Not needed because we overlay inside drawSynth.
+  
+  // However, if synth is playing but cancellation is toggled, drawSynth already includes cancel overlay.
+  // The cancel button should start/stop cancellation nodes.
+  
+  btnCancel.onclick = () => {
+    if (!isSynthPlaying) {
+      cancelStatus.textContent = 'NO SIGNAL';
+      cancelStatus.style.background = '#7f1d1d';
+      cancelStatus.style.color = '#fecaca';
+      setTimeout(() => {
+        if (!isCancelling) {
+          cancelStatus.textContent = 'STANDBY';
+          cancelStatus.style.background = '#27272a';
+          cancelStatus.style.color = '#a1a1aa';
+        }
+      }, 1500);
+      return;
+    }
+    
+    if (isCancelling) {
+      stopCancellation();
+    } else {
+      startCancellation();
+    }
+  };
+  
+  // Ensure cancellation stops when synth stops (handled in btnPlay)
+  
   // --- 2. MIC ---
   const btnMic = document.getElementById('btn-mic');
   const micCanvas = document.getElementById('mic-canvas');
@@ -448,7 +649,7 @@
       
       if (isSharp) {
         const whiteKeyIndex = (octave - 3) * 7 + Math.ceil(i / 2);
-        key.style.left = `${whiteKeyIndex * 38}px`; // matched new width
+        key.style.left = `${whiteKeyIndex * 38}px`;
       }
 
       key.addEventListener('pointerdown', (e) => {
@@ -509,10 +710,14 @@
     pianoCtx.stroke();
   }
 
+  // resume audio context on first user gesture
   document.body.addEventListener('pointerdown', () => {
     if (audioCtx.state === 'suspended') audioCtx.resume();
   }, { once: true });
 
+  // initialize cancel status styling
+  cancelStatus.style.background = '#27272a';
+  cancelStatus.style.color = '#a1a1aa';
 </script>
 </body>
 </html>
